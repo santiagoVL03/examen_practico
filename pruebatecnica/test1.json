@@ -1,0 +1,14 @@
+[
+  {
+    "id": "A",
+    "prioridad": 3,
+    "duracion": 20,
+    "dependencias": [ "B" ]
+  },
+  {
+    "id": "B",
+    "prioridad": 5,
+    "duracion": 20,
+    "dependencias": [ "A" ]
+  }
+]

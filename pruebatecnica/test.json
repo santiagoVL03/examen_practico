@@ -1,0 +1,32 @@
+[
+  {
+    "id": "A",
+    "prioridad": 3,
+    "duracion": 20,
+    "dependencias": [ "B", "C" ]
+  },
+  {
+    "id": "B",
+    "prioridad": 5,
+    "duracion": 20,
+    "dependencias": []
+  },
+  {
+    "id": "C",
+    "prioridad": 5,
+    "duracion": 10,
+    "dependencias": []
+  },
+  {
+    "id": "D",
+    "prioridad": 2,
+    "duracion": 15,
+    "dependencias": [ "A" ]
+  },
+  {
+    "id": "E",
+    "prioridad": 4,
+    "duracion": 15,
+    "dependencias": [ "C" ]
+  }
+]

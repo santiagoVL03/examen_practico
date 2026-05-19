@@ -1,0 +1,35 @@
+# Visual Studio
+.vs/
+.vscode/
+*.slnx
+
+# Build directories
+bin/
+obj/
+Debug/
+Release/
+
+# User-specific files
+*.user
+*.userprefs
+*.suo
+*.sln.docstates
+
+# NuGet
+.nuget/
+*.nupkg
+*.snupkg
+packages/
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
