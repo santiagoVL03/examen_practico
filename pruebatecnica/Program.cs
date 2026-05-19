@@ -1,36 +1,59 @@
 ﻿using System.Text.Json;
 
-var processor = new program_to_process_tasks();
-var processed_tasks = processor.process_tasks("./pruebatecnica/test.json");
-if (processed_tasks.error == "Todo ha sido procesado")
-{
-    Console.WriteLine("Tareas procesadas en el siguiente orden:");
-    var formatted = "[" + string.Join(", ", processed_tasks.Item1.Select(t => $"\"{t}\"")) + "]";
-    Console.WriteLine(formatted);
-}
-else
-{
-    Console.WriteLine(processed_tasks.error);
-}
 
-public class task
+var processor = new TaskProcessor();
+
+for (int i = 0; i < 4; i++)
 {
-    public string id { get; set; }
+    var processed_tasks = processor.process_tasks($"./pruebatecnica/test{i}.json");
+    if (processed_tasks.error == "Todo ha sido procesado")
+    {
+        Console.WriteLine("Tareas procesadas en el siguiente orden:");
+        var formatted = "[" + string.Join(", ", processed_tasks.Item1.Select(t => $"\"{t}\"")) + "]";
+        Console.WriteLine(formatted);
+    }
+    else
+    {
+        Console.WriteLine(processed_tasks.error);
+    }
+}
+public class Task
+{
+    public required string id { get; set; }
     public int prioridad { get; set; }
     public int duracion { get; set; }
-    public List<string> dependencias { get; set; } // Lista de IDs de tareas de las que depende esta tarea
+    public required List<string> dependencias { get; set; }
 }
 
 //Para este ejercicio no podemos hacer uso de librerias externas osea no orders by's mas bien se puede usar el json serializer para leer el archivo json y luego ordenar las tareas manualmente usando ciclos for o while, y luego procesar las tareas en el orden correcto.
-public class program_to_process_tasks
+public class TaskProcessor
 {
-    private List<task> tasks = new List<task>();
-    public List<task> read_entrance(string json_file)
+    private List<Task> tasks = new List<Task>();
+    private bool[] task_processed = new bool[0];
+    private int[] remaining_dependencies = new int[0];
+
+    private bool is_less(string a, string b)
+    {
+        int min = a.Length < b.Length ? a.Length : b.Length;
+
+        for (int i = 0; i < min; i++)
+        {
+            if (a[i] < b[i])
+                return true;
+
+            if (a[i] > b[i])
+                return false;
+        }
+
+        return a.Length < b.Length;
+    }
+
+    public List<Task>? read_entrance(string json_file)
     {
         try
         {
             string jsonContent = File.ReadAllText(json_file);
-            List<task> jsonObject = JsonSerializer.Deserialize<List<task>>(jsonContent);
+            List<Task>? jsonObject = JsonSerializer.Deserialize<List<Task>>(jsonContent);
             return jsonObject;
         }
         catch (FileNotFoundException)
@@ -49,11 +72,7 @@ public class program_to_process_tasks
             return null;
         }
     }
-    // Array para marcar tareas ya procesadas
-    private bool[] task_processed;
-    // Array con contador de dependencias pendientes para cada tarea
-    private int[] remaining_dependencies;
-
+    
     // Obtiene la siguiente tarea a procesar basándose en:
     // 1. Tareas sin dependencias pendientes
     // 2. Mayor prioridad (número mayor)
@@ -78,8 +97,8 @@ public class program_to_process_tasks
             }
 
             // Comparar con la mejor tarea encontrada hasta ahora
-            task current = tasks[i];
-            task best = tasks[best_index];
+            Task current = tasks[i];
+            Task best = tasks[best_index];
 
             // 1. Mayor prioridad primero
             if (current.prioridad != best.prioridad)
@@ -98,7 +117,7 @@ public class program_to_process_tasks
             }
 
             // 3. Orden alfabético (A viene antes que B)
-            if (string.Compare(current.id, best.id) < 0)
+            if (is_less(current.id, best.id))
                 best_index = i;
         }
 
@@ -119,7 +138,7 @@ public class program_to_process_tasks
         // Verificar que cada dependencia exista en la lista de tareas
         for (int i = 0; i < tasks.Count; i++)
         {
-            task current = tasks[i];
+            Task current = tasks[i];
             for (int j = 0; j < current.dependencias.Count; j++)
             {
                 string dependency_id = current.dependencias[j];
@@ -146,18 +165,11 @@ public class program_to_process_tasks
     }
 
     // Inicializa los arrays de control
-    // Complejidad: O(n²) para construir el array de contadores
+    // Complejidad: O(n) para construir el array de contadores
     private void initialize_control_arrays()
     {
         task_processed = new bool[tasks.Count];
         remaining_dependencies = new int[tasks.Count];
-
-        // Construir array de índices por ID para búsqueda rápida
-        int[] task_index = new int[tasks.Count];
-        for (int i = 0; i < tasks.Count; i++)
-        {
-            task_index[i] = i;
-        }
 
         // Inicializar contador de dependencias para cada tarea
         for (int i = 0; i < tasks.Count; i++)
@@ -169,7 +181,14 @@ public class program_to_process_tasks
     public (List<string>, string error) process_tasks(string json_file)
     {
         var result = new List<string>();
-        this.tasks = read_entrance(json_file);
+        var loaded_tasks = read_entrance(json_file);
+
+        if (loaded_tasks == null)
+        {
+            return (new List<string>(), "Error al cargar tareas.");
+        }
+
+        this.tasks = loaded_tasks;
 
         if (this.tasks == null || this.tasks.Count == 0)
         {
@@ -197,14 +216,14 @@ public class program_to_process_tasks
                 return (new List<string>(), "Error: Dependencia circular detectada.");
             }
 
-            task current_task = tasks[next_index];
+            Task current_task = tasks[next_index];
 
             // Procesar la tarea
             result.Add(current_task.id);
             task_processed[next_index] = true;
 
             // Decrementar contador de dependencias de las tareas que dependían de esta
-            // Complejidad: O(n²) en peor caso, pero O(n×d) típicamente
+            // Complejidad: O(n²) en peor caso
             for (int i = 0; i < tasks.Count; i++)
             {
                 if (!task_processed[i])
